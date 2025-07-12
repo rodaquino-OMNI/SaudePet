@@ -1,31 +1,5 @@
 # <img src="https://raw.githubusercontent.com/SaudePet/assets/main/logo.png" alt="SaudePet" width="30" height="30"> SaudePet
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/SaudePet/assets/main/banner.png" alt="SaudePet Banner" width="600">
-</p>
-
-<p align="center">
-  <strong>Seu veterinário virtual disponível 24/7 🐾</strong>
-</p>
-
-<p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/version-1.0.0-blue.svg?style=flat-square" alt="Version"></a>
-  <a href="#"><img src="https://img.shields.io/badge/status-development-yellow.svg?style=flat-square" alt="Status"></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" alt="License"></a>
-  <a href="#"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome"></a>
-</p>
-
-<p align="center">
-  <a href="#-sobre">Sobre</a> •
-  <a href="#-features">Features</a> •
-  <a href="#-tecnologias">Tecnologias</a> •
-  <a href="#-começando">Começando</a> •
-  <a href="#-roadmap">Roadmap</a> •
-  <a href="#-contribuindo">Contribuindo</a> •
-  <a href="#-licença">Licença</a>
-</p>
-
----
 
 ## 📱 Sobre
 
