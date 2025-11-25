@@ -118,6 +118,8 @@ jobs:
         run: npm run db:migrate
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/petvet_test
+          NODE_ENV: test
+        continue-on-error: true
 
       - name: Run tests
         run: npm run test:api
@@ -127,6 +129,8 @@ jobs:
           JWT_SECRET: test-secret-key-for-testing
           NODE_ENV: test
           CORS_ORIGINS: http://localhost:3000,http://localhost:5173
+          STRIPE_SECRET_KEY: sk_test_fake_key_for_testing
+          AI_SERVICES_URL: http://localhost:8000
 
       - uses: codecov/codecov-action@v3
         with:

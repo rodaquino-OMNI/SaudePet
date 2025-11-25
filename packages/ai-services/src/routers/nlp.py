@@ -2,7 +2,7 @@
 NLP endpoints for intent classification and entity extraction.
 """
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -19,7 +19,7 @@ class IntentRequest(BaseModel):
     """Request for intent classification."""
 
     text: str
-    context: Optional[Dict[str, any]] = None
+    context: Optional[Dict[str, Any]] = None
 
 
 class IntentResponse(BaseModel):

@@ -7,6 +7,8 @@ process.env.DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/petvet
 process.env.REDIS_URL = 'redis://localhost:6379';
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing';
 process.env.CORS_ORIGINS = 'http://localhost:3000,http://localhost:5173';
+process.env.STRIPE_SECRET_KEY = 'sk_test_fake_key_for_testing';
+process.env.AI_SERVICES_URL = 'http://localhost:8000';
 
 // Global test timeout
 jest.setTimeout(10000);
