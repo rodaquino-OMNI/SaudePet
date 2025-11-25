@@ -27,7 +27,7 @@ tenacity==8.2.3
 
 # PDF Generation
 reportlab==4.0.8
-weasyprint==60.2
+weasyprint==66.0
 
 # Image Processing
 pillow==10.1.0
