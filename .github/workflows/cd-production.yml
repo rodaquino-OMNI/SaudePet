@@ -1,0 +1,147 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: petvet-production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://api.petvet.ai
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_PROD }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get release version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set ECR Registry
+        run: echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+
+      - name: Tag and push production images
+        env:
+          VERSION: ${{ steps.version.outputs.tag }}
+        run: |
+          # Pull staging images and tag for production
+          docker pull $ECR_REGISTRY/petvet-whatsapp:staging
+          docker pull $ECR_REGISTRY/petvet-api:staging
+          docker pull $ECR_REGISTRY/petvet-ai:staging
+
+          # Tag with version and production
+          docker tag $ECR_REGISTRY/petvet-whatsapp:staging $ECR_REGISTRY/petvet-whatsapp:$VERSION
+          docker tag $ECR_REGISTRY/petvet-whatsapp:staging $ECR_REGISTRY/petvet-whatsapp:production
+          docker tag $ECR_REGISTRY/petvet-api:staging $ECR_REGISTRY/petvet-api:$VERSION
+          docker tag $ECR_REGISTRY/petvet-api:staging $ECR_REGISTRY/petvet-api:production
+          docker tag $ECR_REGISTRY/petvet-ai:staging $ECR_REGISTRY/petvet-ai:$VERSION
+          docker tag $ECR_REGISTRY/petvet-ai:staging $ECR_REGISTRY/petvet-ai:production
+
+          # Push
+          docker push $ECR_REGISTRY/petvet-whatsapp:$VERSION
+          docker push $ECR_REGISTRY/petvet-whatsapp:production
+          docker push $ECR_REGISTRY/petvet-api:$VERSION
+          docker push $ECR_REGISTRY/petvet-api:production
+          docker push $ECR_REGISTRY/petvet-ai:$VERSION
+          docker push $ECR_REGISTRY/petvet-ai:production
+
+      - name: Run database migrations
+        run: |
+          aws ecs run-task \
+            --cluster $ECS_CLUSTER \
+            --task-definition petvet-migration-prod \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.PROD_SUBNET_ID }}],securityGroups=[${{ secrets.PROD_SG_ID }}]}"
+
+          sleep 60  # Wait for migration
+
+      - name: Blue-Green deployment
+        run: |
+          # Deploy to green environment first
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service petvet-whatsapp-green \
+            --task-definition petvet-whatsapp-prod \
+            --force-new-deployment
+
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service petvet-api-green \
+            --task-definition petvet-api-prod \
+            --force-new-deployment
+
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service petvet-ai-green \
+            --task-definition petvet-ai-prod \
+            --force-new-deployment
+
+          # Wait for green to be healthy
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services petvet-whatsapp-green petvet-api-green petvet-ai-green
+
+      - name: Health check green environment
+        run: |
+          curl -f https://green.petvet.ai/health || exit 1
+
+      - name: Switch traffic to green
+        run: |
+          # Update ALB target group weights
+          aws elbv2 modify-rule \
+            --rule-arn ${{ secrets.ALB_RULE_ARN }} \
+            --actions '[{"Type":"forward","ForwardConfig":{"TargetGroups":[{"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":100},{"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":0}]}}]'
+
+      - name: Verify production
+        run: |
+          sleep 30
+
+          # Verify WhatsApp webhook is responding
+          curl -f "https://whatsapp.petvet.ai/webhooks/whatsapp?hub.mode=subscribe&hub.verify_token=${{ secrets.WHATSAPP_VERIFY_TOKEN }}&hub.challenge=test" || exit 1
+
+          # Verify API
+          curl -f https://api.petvet.ai/health || exit 1
+
+      - name: Update blue environment
+        if: success()
+        run: |
+          # Update blue to match green for next deployment
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service petvet-whatsapp-blue \
+            --task-definition petvet-whatsapp-prod \
+            --force-new-deployment
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          # Switch traffic back to blue
+          aws elbv2 modify-rule \
+            --rule-arn ${{ secrets.ALB_RULE_ARN }} \
+            --actions '[{"Type":"forward","ForwardConfig":{"TargetGroups":[{"TargetGroupArn":"${{ secrets.BLUE_TG_ARN }}","Weight":100},{"TargetGroupArn":"${{ secrets.GREEN_TG_ARN }}","Weight":0}]}}]'
+
+      - name: Notify team
+        if: always()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '🚀' || '🚨' }} Production deployment ${{ job.status }}: ${{ steps.version.outputs.tag }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

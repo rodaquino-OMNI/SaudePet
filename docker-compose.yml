@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  # WhatsApp Handler Service
+  whatsapp-handler:
+    build:
+      context: ./packages/whatsapp-handler
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - API_URL=http://api:3000
+      - AI_SERVICE_URL=http://ai-services:8000
+      - WHATSAPP_API_URL=${WHATSAPP_API_URL}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN}
+      - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET}
+    depends_on:
+      - redis
+      - api
+      - ai-services
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - petvet-network
+
+  # Core API Service
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=7d
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - petvet-network
+
+  # AI Services
+  ai-services:
+    build:
+      context: ./packages/ai-services
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEFAULT_LLM_PROVIDER=openai
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - petvet-network
+
+  # Admin Dashboard
+  admin-dashboard:
+    build:
+      context: ./packages/admin-dashboard
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - petvet-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - petvet-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - petvet-network
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  petvet-network:
+    driver: bridge

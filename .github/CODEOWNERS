@@ -1,0 +1,30 @@
+# PetVet AI Code Owners
+# These owners will be automatically requested for review
+
+# Default owners for everything
+* @saudepet/tech-leads
+
+# WhatsApp Handler
+/packages/whatsapp-handler/ @saudepet/backend-team @saudepet/tech-leads
+
+# Core API
+/packages/api/ @saudepet/backend-team @saudepet/tech-leads
+
+# AI Services
+/packages/ai-services/ @saudepet/ai-team @saudepet/tech-leads
+
+# Admin Dashboard
+/packages/admin/ @saudepet/frontend-team
+
+# Infrastructure
+/infrastructure/ @saudepet/devops-team @saudepet/tech-leads
+
+# CI/CD Workflows
+/.github/workflows/ @saudepet/devops-team @saudepet/tech-leads
+
+# Documentation
+/docs/ @saudepet/tech-leads
+
+# Security-sensitive files
+/.github/CODEOWNERS @saudepet/tech-leads
+/infrastructure/terraform/environments/production/ @saudepet/tech-leads @saudepet/devops-team

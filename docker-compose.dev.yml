@@ -1,0 +1,168 @@
+version: '3.8'
+
+# Development configuration with hot reloading
+# Usage: docker-compose -f docker-compose.dev.yml up
+
+services:
+  # WhatsApp Handler Service (Development)
+  whatsapp-handler:
+    build:
+      context: ./packages/whatsapp-handler
+      dockerfile: Dockerfile
+      target: builder
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - API_URL=http://api:3000
+      - AI_SERVICE_URL=http://ai-services:8000
+      - WHATSAPP_API_URL=${WHATSAPP_API_URL:-https://graph.facebook.com/v18.0}
+      - WHATSAPP_PHONE_NUMBER_ID=${WHATSAPP_PHONE_NUMBER_ID:-test}
+      - WHATSAPP_ACCESS_TOKEN=${WHATSAPP_ACCESS_TOKEN:-test}
+      - WHATSAPP_WEBHOOK_VERIFY_TOKEN=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-petvet-verify-token}
+      - WHATSAPP_APP_SECRET=${WHATSAPP_APP_SECRET:-test}
+    volumes:
+      - ./packages/whatsapp-handler/src:/app/src
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      - redis
+      - api
+    networks:
+      - petvet-dev-network
+
+  # Core API Service (Development)
+  api:
+    build:
+      context: ./packages/api
+      dockerfile: Dockerfile
+      target: builder
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://petvet:petvet123@postgres:5432/petvet_dev
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - JWT_EXPIRES_IN=7d
+    volumes:
+      - ./packages/api/src:/app/src
+      - /app/node_modules
+    command: npm run dev
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - petvet-dev-network
+
+  # AI Services (Development)
+  ai-services:
+    build:
+      context: ./packages/ai-services
+      dockerfile: Dockerfile
+      target: builder
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-test}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-sk-test}
+      - DEFAULT_LLM_PROVIDER=openai
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./packages/ai-services/src:/app/src
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    depends_on:
+      - redis
+    networks:
+      - petvet-dev-network
+
+  # Admin Dashboard (Development)
+  admin-dashboard:
+    build:
+      context: ./packages/admin-dashboard
+      dockerfile: Dockerfile
+      target: builder
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    volumes:
+      - ./packages/admin-dashboard/src:/app/src
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    depends_on:
+      - api
+    networks:
+      - petvet-dev-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=petvet
+      - POSTGRES_PASSWORD=petvet123
+      - POSTGRES_DB=petvet_dev
+    volumes:
+      - postgres-dev-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petvet -d petvet_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - petvet-dev-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - petvet-dev-network
+
+  # Redis Commander (UI for Redis)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - petvet-dev-network
+
+  # pgAdmin (UI for PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    ports:
+      - "8082:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@petvet.ai
+      - PGADMIN_DEFAULT_PASSWORD=admin
+    depends_on:
+      - postgres
+    networks:
+      - petvet-dev-network
+
+volumes:
+  postgres-dev-data:
+
+networks:
+  petvet-dev-network:
+    driver: bridge

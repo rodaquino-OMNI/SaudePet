@@ -1,0 +1,14 @@
+# PetVet AI - Dev Environment Variables
+# Copy this file to terraform.tfvars and fill in the values
+
+aws_region = "us-east-1"
+
+# Database credentials (use AWS Secrets Manager in production)
+db_username = "petvet_admin"
+db_password = "CHANGE_ME_STRONG_PASSWORD"
+
+# ECR Repository
+ecr_repository_url = "123456789012.dkr.ecr.us-east-1.amazonaws.com"
+
+# Image tag
+image_tag = "dev"
