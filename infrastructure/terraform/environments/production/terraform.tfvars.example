@@ -1,0 +1,13 @@
+# PetVet AI - Production Environment Variables
+# Copy this file to terraform.tfvars and fill in the values
+# IMPORTANT: Never commit terraform.tfvars to version control!
+
+aws_region = "us-east-1"
+
+db_username = "petvet_prod"
+db_password = "your-very-secure-production-password"
+
+ecr_repository_url = "123456789012.dkr.ecr.us-east-1.amazonaws.com"
+image_tag          = "production"
+
+pagerduty_endpoint = "https://events.pagerduty.com/integration/xxx/enqueue"

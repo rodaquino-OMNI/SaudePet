@@ -1,0 +1,25 @@
+name: "PetVet AI CodeQL Config"
+
+# Specify queries to run
+queries:
+  - uses: security-and-quality
+  - uses: security-extended
+
+# Paths to ignore during analysis
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/build/**'
+  - '**/*.test.ts'
+  - '**/*.spec.ts'
+  - '**/tests/**'
+  - '**/coverage/**'
+  - '**/__pycache__/**'
+  - '**/.pytest_cache/**'
+
+# Path filters to include
+paths:
+  - 'packages/api/src/**'
+  - 'packages/whatsapp-handler/src/**'
+  - 'packages/ai-services/src/**'
+  - 'packages/admin-dashboard/src/**'

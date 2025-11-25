@@ -1,0 +1,912 @@
+openapi: 3.0.3
+info:
+  title: PetVet AI API
+  description: |
+    API for PetVet AI - A WhatsApp-first veterinary virtual assistant platform.
+
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    ## Rate Limiting
+    - API endpoints: 100 requests per 15 minutes per user
+    - WhatsApp webhook: 1000 requests per minute
+  version: 1.0.0
+  contact:
+    email: api@petvet.ai
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.petvet.ai/api/v1
+    description: Production server
+  - url: https://staging-api.petvet.ai/api/v1
+    description: Staging server
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+tags:
+  - name: Users
+    description: User management operations
+  - name: Pets
+    description: Pet profile management
+  - name: Consultations
+    description: AI-powered veterinary consultations
+  - name: Health Records
+    description: Pet health record management
+  - name: Subscriptions
+    description: Subscription management and billing
+  - name: Reminders
+    description: Reminder scheduling and management
+
+paths:
+  /users/by-phone/{phoneNumber}:
+    get:
+      tags:
+        - Users
+      summary: Get user by phone number
+      description: Find a user by their WhatsApp phone number
+      parameters:
+        - name: phoneNumber
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "5511999999999"
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users:
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+                - name
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "5511999999999"
+                name:
+                  type: string
+                  example: "Maria Silva"
+                email:
+                  type: string
+                  format: email
+                  example: "maria@example.com"
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+    put:
+      tags:
+        - Users
+      summary: Update current user
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /pets:
+    get:
+      tags:
+        - Pets
+      summary: List user's pets
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of pets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+    post:
+      tags:
+        - Pets
+      summary: Create a new pet
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetInput'
+      responses:
+        '201':
+          description: Pet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+
+  /pets/{id}:
+    get:
+      tags:
+        - Pets
+      summary: Get pet by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pet details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          description: Pet not found
+    put:
+      tags:
+        - Pets
+      summary: Update pet
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetInput'
+      responses:
+        '200':
+          description: Pet updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+    delete:
+      tags:
+        - Pets
+      summary: Delete pet
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Pet deleted
+
+  /consultations:
+    post:
+      tags:
+        - Consultations
+      summary: Start a new consultation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - petId
+                - symptoms
+              properties:
+                petId:
+                  type: string
+                  format: uuid
+                symptoms:
+                  type: string
+                  example: "Vomitando desde ontem, nao quer comer"
+      responses:
+        '201':
+          description: Consultation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consultation'
+
+  /consultations/{id}:
+    get:
+      tags:
+        - Consultations
+      summary: Get consultation details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Consultation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consultation'
+    patch:
+      tags:
+        - Consultations
+      summary: Update consultation
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                diagnosis:
+                  $ref: '#/components/schemas/Diagnosis'
+                treatment:
+                  $ref: '#/components/schemas/Treatment'
+                status:
+                  type: string
+                  enum: [pending, active, completed, cancelled]
+      responses:
+        '200':
+          description: Consultation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Consultation'
+
+  /consultations/{id}/prescription:
+    post:
+      tags:
+        - Consultations
+      summary: Generate prescription PDF
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Prescription URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                    example: "https://storage.petvet.ai/prescriptions/abc123.pdf"
+
+  /subscriptions/plans:
+    get:
+      tags:
+        - Subscriptions
+      summary: List available subscription plans
+      responses:
+        '200':
+          description: Available plans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  basic:
+                    $ref: '#/components/schemas/Plan'
+                  family:
+                    $ref: '#/components/schemas/Plan'
+                  premium:
+                    $ref: '#/components/schemas/Plan'
+
+  /subscriptions:
+    post:
+      tags:
+        - Subscriptions
+      summary: Create subscription
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - plan
+              properties:
+                userId:
+                  type: string
+                  format: uuid
+                plan:
+                  type: string
+                  enum: [basic, family, premium]
+      responses:
+        '201':
+          description: Subscription created or checkout URL
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Subscription'
+                  - type: object
+                    properties:
+                      checkoutUrl:
+                        type: string
+                        format: uri
+                      sessionId:
+                        type: string
+
+  /subscriptions/current:
+    get:
+      tags:
+        - Subscriptions
+      summary: Get current subscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current subscription
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+    put:
+      tags:
+        - Subscriptions
+      summary: Update subscription (upgrade/downgrade)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - plan
+              properties:
+                plan:
+                  type: string
+                  enum: [basic, family, premium]
+      responses:
+        '200':
+          description: Subscription updated
+    delete:
+      tags:
+        - Subscriptions
+      summary: Cancel subscription
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Subscription cancelled
+
+  /reminders:
+    get:
+      tags:
+        - Reminders
+      summary: List reminders
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, sent, acknowledged, snoozed]
+        - name: upcoming
+          in: query
+          schema:
+            type: boolean
+          description: Filter to reminders in the next 7 days
+      responses:
+        '200':
+          description: List of reminders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reminder'
+    post:
+      tags:
+        - Reminders
+      summary: Create a reminder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - petId
+                - reminderType
+                - title
+                - scheduledDate
+              properties:
+                petId:
+                  type: string
+                  format: uuid
+                reminderType:
+                  type: string
+                  enum: [vaccine, medication, checkup, appointment, other]
+                title:
+                  type: string
+                  example: "Vacina V10"
+                description:
+                  type: string
+                scheduledDate:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Reminder created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+
+  /reminders/{id}:
+    get:
+      tags:
+        - Reminders
+      summary: Get reminder by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reminder details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+    put:
+      tags:
+        - Reminders
+      summary: Update reminder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                scheduledDate:
+                  type: string
+                  format: date-time
+                status:
+                  type: string
+                  enum: [pending, acknowledged, snoozed]
+      responses:
+        '200':
+          description: Reminder updated
+    delete:
+      tags:
+        - Reminders
+      summary: Delete reminder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Reminder deleted
+
+  /reminders/{id}/acknowledge:
+    post:
+      tags:
+        - Reminders
+      summary: Acknowledge a reminder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Reminder acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+
+  /reminders/{id}/snooze:
+    post:
+      tags:
+        - Reminders
+      summary: Snooze a reminder
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duration:
+                  type: integer
+                  description: Snooze duration in hours
+                  default: 24
+      responses:
+        '200':
+          description: Reminder snoozed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reminder'
+
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phoneNumber:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Pet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        species:
+          type: string
+          enum: [dog, cat, bird, exotic]
+        breed:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          type: string
+          enum: [male, female]
+        weight:
+          type: number
+        neutered:
+          type: boolean
+        photoUrl:
+          type: string
+          format: uri
+        createdAt:
+          type: string
+          format: date-time
+
+    PetInput:
+      type: object
+      required:
+        - name
+        - species
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        species:
+          type: string
+          enum: [dog, cat, bird, exotic]
+        breed:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        sex:
+          type: string
+          enum: [male, female]
+        weight:
+          type: number
+        neutered:
+          type: boolean
+
+    Consultation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        petId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, active, completed, cancelled]
+        symptoms:
+          type: object
+        diagnosis:
+          $ref: '#/components/schemas/Diagnosis'
+        treatment:
+          $ref: '#/components/schemas/Treatment'
+        urgencyLevel:
+          type: string
+          enum: [low, medium, high, emergency]
+        prescriptionUrl:
+          type: string
+          format: uri
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    Diagnosis:
+      type: object
+      properties:
+        primary:
+          type: string
+          description: Primary diagnosis
+        differentials:
+          type: array
+          items:
+            type: object
+            properties:
+              condition:
+                type: string
+              probability:
+                type: integer
+                minimum: 0
+                maximum: 100
+        urgencyLevel:
+          type: string
+          enum: [low, medium, high, emergency]
+
+    Treatment:
+      type: object
+      properties:
+        medications:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              dosage:
+                type: string
+              route:
+                type: string
+              frequency:
+                type: string
+              duration:
+                type: string
+        supportiveCare:
+          type: array
+          items:
+            type: string
+        followUp:
+          type: string
+
+    Plan:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+        consultations:
+          type: integer
+          description: -1 for unlimited
+        pets:
+          type: integer
+          description: -1 for unlimited
+        features:
+          type: array
+          items:
+            type: string
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+          format: uuid
+        plan:
+          type: string
+          enum: [basic, family, premium]
+        status:
+          type: string
+          enum: [active, cancelled, past_due, trialing]
+        currentPeriodStart:
+          type: string
+          format: date-time
+        currentPeriodEnd:
+          type: string
+          format: date-time
+
+    Reminder:
+      type: object
+      properties:
+        id:
+          type: string
+        petId:
+          type: string
+          format: uuid
+        reminderType:
+          type: string
+          enum: [vaccine, medication, checkup, appointment, other]
+        title:
+          type: string
+        description:
+          type: string
+        scheduledDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, sent, acknowledged, snoozed]
+        sentAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string

@@ -181,9 +181,19 @@ export const mainMenuFlow: Flow & {
         };
       }
 
+      const getSpeciesEmoji = (species: string): string => {
+        const emojis: Record<string, string> = {
+          dog: '🐕',
+          cat: '🐈',
+          bird: '🐦',
+          exotic: '🦎',
+        };
+        return emojis[species] || '🐾';
+      };
+
       const petsList = pets
         .map((pet, index) => {
-          const emoji = pet.species === 'dog' ? '🐕' : pet.species === 'cat' ? '🐈' : '🐾';
+          const emoji = getSpeciesEmoji(pet.species);
           const age = pet.birthDate ? calculateAge(pet.birthDate) : '';
           return `${index + 1}. ${emoji} *${pet.name}*${pet.breed ? ` - ${pet.breed}` : ''}${age ? ` (${age})` : ''}`;
         })

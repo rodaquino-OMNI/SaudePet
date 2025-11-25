@@ -4,6 +4,7 @@ import { logger } from '../utils/logger';
 import { mainMenuFlow } from './main-menu.flow';
 import { consultationFlow } from './consultation.flow';
 import { petRegistrationFlow } from './pet-registration.flow';
+import { subscriptionFlow } from './subscription.flow';
 
 export interface FlowContext {
   session: Session;
@@ -26,6 +27,7 @@ const flows: Record<string, Flow> = {
   'main-menu': mainMenuFlow,
   'consultation': consultationFlow,
   'pet-registration': petRegistrationFlow,
+  'subscription': subscriptionFlow,
 };
 
 class FlowEngine {
