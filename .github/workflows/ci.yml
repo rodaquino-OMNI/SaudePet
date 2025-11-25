@@ -70,6 +70,12 @@ jobs:
         env:
           REDIS_URL: redis://localhost:6379
           NODE_ENV: test
+          WHATSAPP_VERIFY_TOKEN: test-verify-token
+          WHATSAPP_ACCESS_TOKEN: test-access-token
+          WHATSAPP_PHONE_NUMBER_ID: test-phone-id
+          WHATSAPP_APP_SECRET: test-app-secret
+          API_URL: http://localhost:3000
+          AI_SERVICES_URL: http://localhost:8000
 
       - uses: codecov/codecov-action@v3
         with:
@@ -118,8 +124,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/petvet_test
           REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret
+          JWT_SECRET: test-secret-key-for-testing
           NODE_ENV: test
+          CORS_ORIGINS: http://localhost:3000,http://localhost:5173
 
       - uses: codecov/codecov-action@v3
         with:
@@ -149,10 +156,13 @@ jobs:
       - name: Run tests
         run: |
           cd packages/ai-services
-          pytest --cov=src --cov-report=xml
+          pytest tests/ --cov=src --cov-report=xml -v
         env:
+          ENVIRONMENT: test
           REDIS_URL: redis://localhost:6379
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY_TEST }}
+          ANTHROPIC_API_KEY: test-anthropic-key
+          CORS_ORIGINS: http://localhost:3000,http://localhost:5173
 
       - uses: codecov/codecov-action@v3
         with:
@@ -234,7 +244,7 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: 'trivy-results.sarif'
