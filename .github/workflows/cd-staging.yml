@@ -1,0 +1,111 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+
+env:
+  AWS_REGION: us-east-1
+  ECS_CLUSTER: petvet-staging
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set ECR Registry
+        run: echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> $GITHUB_ENV
+
+      - name: Build and push WhatsApp Handler
+        run: |
+          docker build -t $ECR_REGISTRY/petvet-whatsapp:${{ github.sha }} ./packages/whatsapp-handler
+          docker push $ECR_REGISTRY/petvet-whatsapp:${{ github.sha }}
+          docker tag $ECR_REGISTRY/petvet-whatsapp:${{ github.sha }} $ECR_REGISTRY/petvet-whatsapp:staging
+          docker push $ECR_REGISTRY/petvet-whatsapp:staging
+
+      - name: Build and push API
+        run: |
+          docker build -t $ECR_REGISTRY/petvet-api:${{ github.sha }} ./packages/api
+          docker push $ECR_REGISTRY/petvet-api:${{ github.sha }}
+          docker tag $ECR_REGISTRY/petvet-api:${{ github.sha }} $ECR_REGISTRY/petvet-api:staging
+          docker push $ECR_REGISTRY/petvet-api:staging
+
+      - name: Build and push AI Services
+        run: |
+          docker build -t $ECR_REGISTRY/petvet-ai:${{ github.sha }} ./packages/ai-services
+          docker push $ECR_REGISTRY/petvet-ai:${{ github.sha }}
+          docker tag $ECR_REGISTRY/petvet-ai:${{ github.sha }} $ECR_REGISTRY/petvet-ai:staging
+          docker push $ECR_REGISTRY/petvet-ai:staging
+
+      - name: Run database migrations
+        run: |
+          aws ecs run-task \
+            --cluster $ECS_CLUSTER \
+            --task-definition petvet-migration-staging \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[${{ secrets.STAGING_SUBNET_ID }}],securityGroups=[${{ secrets.STAGING_SG_ID }}],assignPublicIp=ENABLED}" \
+            --overrides '{"containerOverrides":[{"name":"migration","command":["npm","run","db:migrate"]}]}'
+
+          # Wait for migration to complete
+          sleep 30
+
+      - name: Update ECS services
+        run: |
+          # Update WhatsApp Handler
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service petvet-whatsapp-staging \
+            --force-new-deployment
+
+          # Update API
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service petvet-api-staging \
+            --force-new-deployment
+
+          # Update AI Services
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service petvet-ai-staging \
+            --force-new-deployment
+
+      - name: Wait for deployment
+        run: |
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services petvet-whatsapp-staging petvet-api-staging petvet-ai-staging
+
+      - name: Verify health
+        run: |
+          # Check WhatsApp handler health
+          curl -f https://staging-whatsapp.petvet.ai/health || exit 1
+
+          # Check API health
+          curl -f https://staging-api.petvet.ai/health || exit 1
+
+          # Check AI services health
+          curl -f https://staging-ai.petvet.ai/health || exit 1
+
+      - name: Notify Slack
+        if: always()
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "${{ job.status == 'success' && '✅' || '❌' }} Staging deployment ${{ job.status }}: ${{ github.sha }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

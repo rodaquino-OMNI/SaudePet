@@ -1,0 +1,74 @@
+name: Scheduled Jobs
+
+on:
+  schedule:
+    # Process reminders every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      job_type:
+        description: 'Job to run'
+        required: true
+        type: choice
+        options:
+          - reminders
+          - cleanup
+          - subscription-check
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  process-reminders:
+    if: github.event.schedule == '0 * * * *' || github.event.inputs.job_type == 'reminders'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Trigger reminder processor
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.API_INTERNAL_TOKEN }}" \
+            https://api.petvet.ai/internal/jobs/process-reminders
+
+  cleanup:
+    if: github.event.schedule == '0 3 * * 0' || github.event.inputs.job_type == 'cleanup'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Run cleanup jobs
+        run: |
+          # Clean expired sessions
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.API_INTERNAL_TOKEN }}" \
+            https://api.petvet.ai/internal/jobs/cleanup-sessions
+
+          # Archive old consultations
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.API_INTERNAL_TOKEN }}" \
+            https://api.petvet.ai/internal/jobs/archive-consultations
+
+  subscription-check:
+    if: github.event.schedule == '0 6 * * *' || github.event.inputs.job_type == 'subscription-check'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Check subscription renewals
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.API_INTERNAL_TOKEN }}" \
+            https://api.petvet.ai/internal/jobs/check-subscriptions
+
+  notify-on-failure:
+    needs: [process-reminders, cleanup, subscription-check]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify on failure
+        uses: slackapi/slack-github-action@v1.24.0
+        with:
+          payload: |
+            {
+              "text": "🚨 Scheduled job failed! Check GitHub Actions for details."
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

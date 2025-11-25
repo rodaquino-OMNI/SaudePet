@@ -90,18 +90,78 @@ Democratizar o acesso a cuidados veterinários de qualidade, fornecendo orienta�
 
 ---
 
+## 🏗 Arquitetura
+
+O SaudePet utiliza uma arquitetura de microserviços com foco em **WhatsApp-first**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        WhatsApp Cloud API                       │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                     WhatsApp Handler Service                      │
+│              (Node.js/Express + Bull Queue + Redis)              │
+│  • Webhook receiver    • Message queue    • Flow engine          │
+└──────────────────────────────┬───────────────────────────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              ▼                ▼                ▼
+┌──────────────────┐  ┌───────────────┐  ┌───────────────────┐
+│    Core API      │  │  AI Services  │  │  Admin Dashboard  │
+│  (Node/Express)  │  │   (FastAPI)   │  │     (React)       │
+│  • User mgmt     │  │  • LLM orch.  │  │  • Analytics      │
+│  • Pet records   │  │  • Diagnosis  │  │  • User mgmt      │
+│  • Consultations │  │  • NLP proc.  │  │  • Monitoring     │
+└────────┬─────────┘  └───────────────┘  └───────────────────┘
+         │
+         ▼
+┌───────────────────┐  ┌──────────────┐
+│    PostgreSQL     │  │    Redis     │
+│  (RDS/Aurora)     │  │ (ElastiCache)│
+└───────────────────┘  └──────────────┘
+```
+
+### 📁 Estrutura do Monorepo
+
+```
+SaudePet/
+├── packages/
+│   ├── whatsapp-handler/     # Serviço de integração WhatsApp
+│   ├── api/                  # API principal (usuários, pets, consultas)
+│   ├── ai-services/          # Serviços de IA (Python/FastAPI)
+│   └── admin-dashboard/      # Painel administrativo (React)
+├── infrastructure/
+│   └── terraform/            # Infraestrutura AWS como código
+│       └── modules/
+│           ├── networking/   # VPC, subnets, security groups
+│           ├── database/     # RDS, ElastiCache
+│           ├── compute/      # ECS Fargate services
+│           ├── storage/      # S3, CloudFront
+│           └── monitoring/   # CloudWatch, SNS alerting
+├── .github/
+│   └── workflows/            # CI/CD pipelines
+├── scripts/                  # Scripts de desenvolvimento
+├── docker-compose.yml        # Orquestração para produção
+└── docker-compose.dev.yml    # Ambiente de desenvolvimento
+```
+
+---
+
 ## 🚀 Começando
 
 ### Pré-requisitos
 
 - Node.js 20.x
-- npm ou yarn
-- PostgreSQL 15
-- Redis 7
+- Python 3.11+ (para AI Services)
+- Docker e Docker Compose
+- PostgreSQL 15 (ou via Docker)
+- Redis 7 (ou via Docker)
 - Conta AWS (para deploy)
-- Chaves de API (OpenAI, Stripe)
+- Chaves de API (OpenAI/Anthropic, WhatsApp Business, Stripe)
 
-### 🔧 Instalação
+### 🔧 Instalação Rápida
 
 1. **Clone o repositório**
 ```bash
@@ -109,61 +169,64 @@ git clone https://github.com/SaudePet/saudepet.git
 cd saudepet
 ```
 
-2. **Instale as dependências**
+2. **Execute o script de setup**
 ```bash
-# Backend
-cd backend
-npm install
-
-# Mobile
-cd ../mobile
-npm install
-cd ios && pod install # apenas iOS
+./scripts/setup-dev.sh
 ```
+
+Ou manualmente:
 
 3. **Configure as variáveis de ambiente**
 ```bash
-# Backend (.env)
 cp .env.example .env
-
-# Edite o arquivo .env com suas configurações:
-DATABASE_URL=postgresql://user:password@localhost:5432/saudepet
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key
-OPENAI_API_KEY=sk-...
-STRIPE_SECRET_KEY=sk_...
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
+# Edite .env com suas configurações
 ```
 
-4. **Configure o banco de dados**
+4. **Instale as dependências**
 ```bash
-cd backend
-npm run migration:run
-npm run seed # dados de exemplo
+npm install
 ```
 
-5. **Inicie os serviços**
+5. **Inicie com Docker Compose**
 ```bash
-# Terminal 1 - Backend
-cd backend
-npm run dev
-
-# Terminal 2 - Mobile
-cd mobile
-npm run ios     # ou
-npm run android
+docker compose -f docker-compose.dev.yml up
 ```
+
+### 📍 URLs de Desenvolvimento
+
+| Serviço | URL |
+|---------|-----|
+| WhatsApp Handler | http://localhost:3001 |
+| Core API | http://localhost:3000 |
+| AI Services | http://localhost:8000 |
+| Admin Dashboard | http://localhost:5173 |
+| pgAdmin | http://localhost:8082 |
+| Redis Commander | http://localhost:8081 |
 
 ### 🐳 Docker
 
 ```bash
-# Desenvolvimento com Docker Compose
-docker-compose up -d
+# Desenvolvimento (com hot reload)
+docker compose -f docker-compose.dev.yml up
 
 # Produção
-docker build -t saudepet-api:latest .
-docker run -p 3000:3000 saudepet-api:latest
+docker compose up -d
+
+# Build individual
+docker build -t petvet-api:latest ./packages/api
+```
+
+### 🧪 Testando WhatsApp Localmente
+
+Use o simulador de mensagens WhatsApp:
+```bash
+./scripts/simulate-whatsapp.sh
+
+# Ou envie uma mensagem específica:
+./scripts/simulate-whatsapp.sh --message "Oi"
+
+# Ou execute um fluxo completo de consulta:
+./scripts/simulate-whatsapp.sh --flow
 ```
 
 ---
