@@ -1,109 +1,140 @@
 -- PetVet Database Initialization Script
 -- Creates the initial schema for the application
+-- Version: 2.0 - November 2025
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Users table
+-- Users table (identified by WhatsApp phone number)
 CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(50) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     phone_number VARCHAR(20) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
+    name VARCHAR(100),
     email VARCHAR(255),
-    subscription_tier VARCHAR(20) DEFAULT 'free',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    deleted_at TIMESTAMP WITH TIME ZONE  -- Soft delete for LGPD compliance
 );
 
 -- Pets table
 CREATE TABLE IF NOT EXISTS pets (
-    id VARCHAR(50) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(100) NOT NULL,
-    species VARCHAR(20) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(50) NOT NULL,
+    species VARCHAR(20) NOT NULL,  -- dog, cat, bird, exotic
     breed VARCHAR(100),
     birth_date DATE,
-    weight DECIMAL(10, 2),
-    photo_url TEXT,
+    sex VARCHAR(10),  -- male, female
+    weight DECIMAL(5, 2),
+    neutered BOOLEAN DEFAULT FALSE,
+    photo_url VARCHAR(500),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Consultations table
+-- Consultations table (WhatsApp conversations)
 CREATE TABLE IF NOT EXISTS consultations (
-    id VARCHAR(50) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    pet_id VARCHAR(50) NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
-    status VARCHAR(20) DEFAULT 'pending',
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pet_id UUID NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    whatsapp_conversation_id VARCHAR(100),  -- Meta's conversation ID
+    status VARCHAR(20) DEFAULT 'pending',  -- pending, active, completed, cancelled
     symptoms JSONB,
-    diagnosis JSONB,
-    treatment JSONB,
+    diagnosis JSONB,  -- Structured diagnosis result
+    treatment JSONB,  -- Treatment protocol
+    urgency_level VARCHAR(20),  -- low, medium, high, emergency
+    prescription_url VARCHAR(500),
     conversation_history JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     completed_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Consultation Messages table (for tracking individual messages)
+CREATE TABLE IF NOT EXISTS consultation_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    consultation_id UUID REFERENCES consultations(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,  -- user, assistant, system
+    content TEXT NOT NULL,
+    message_type VARCHAR(20) DEFAULT 'text',  -- text, image, document
+    media_url VARCHAR(500),
+    whatsapp_message_id VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Health Records table
 CREATE TABLE IF NOT EXISTS health_records (
-    id VARCHAR(50) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    pet_id VARCHAR(50) NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
-    record_type VARCHAR(50) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pet_id UUID NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+    consultation_id UUID REFERENCES consultations(id),
+    record_type VARCHAR(50) NOT NULL,  -- consultation, vaccine, exam, medication, procedure
+    title VARCHAR(200) NOT NULL,
     description TEXT,
     date DATE NOT NULL,
-    attachments JSONB,
+    attachments JSONB,  -- Array of {url, type, name}
+    metadata JSONB,  -- Type-specific data
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Subscriptions table
 CREATE TABLE IF NOT EXISTS subscriptions (
-    id VARCHAR(50) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    tier VARCHAR(20) NOT NULL DEFAULT 'free',
-    status VARCHAR(20) NOT NULL DEFAULT 'active',
-    monthly_consultations INTEGER DEFAULT 3,
-    consultations_used INTEGER DEFAULT 0,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    plan VARCHAR(20) NOT NULL,  -- basic, family, premium
+    status VARCHAR(20) DEFAULT 'active',  -- active, cancelled, past_due, trialing
+    stripe_subscription_id VARCHAR(100),
+    stripe_customer_id VARCHAR(100),
     current_period_start TIMESTAMP WITH TIME ZONE,
     current_period_end TIMESTAMP WITH TIME ZONE,
-    stripe_subscription_id VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    cancelled_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Reminders table
 CREATE TABLE IF NOT EXISTS reminders (
-    id VARCHAR(50) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
-    user_id VARCHAR(50) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    pet_id VARCHAR(50) REFERENCES pets(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL,
-    title VARCHAR(255) NOT NULL,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pet_id UUID NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+    reminder_type VARCHAR(50) NOT NULL,  -- vaccine, medication, checkup
+    title VARCHAR(200) NOT NULL,
     description TEXT,
-    scheduled_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    scheduled_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',  -- pending, sent, acknowledged, snoozed
     sent_at TIMESTAMP WITH TIME ZONE,
-    status VARCHAR(20) DEFAULT 'pending',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- WhatsApp Sessions table (for conversation state persistence/analytics)
+CREATE TABLE IF NOT EXISTS whatsapp_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id),
+    phone_number VARCHAR(20) NOT NULL,
+    session_state JSONB,  -- Current conversation state
+    active_pet_id UUID REFERENCES pets(id),
+    last_message_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Admins table
 CREATE TABLE IF NOT EXISTS admins (
-    id VARCHAR(50) PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(20) DEFAULT 'operator',
+    role VARCHAR(20) DEFAULT 'operator',  -- operator, admin, superadmin
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone_number);
-CREATE INDEX IF NOT EXISTS idx_pets_user ON pets(user_id);
-CREATE INDEX IF NOT EXISTS idx_consultations_user ON consultations(user_id);
-CREATE INDEX IF NOT EXISTS idx_consultations_pet ON consultations(pet_id);
+CREATE INDEX IF NOT EXISTS idx_pets_user_id ON pets(user_id);
+CREATE INDEX IF NOT EXISTS idx_consultations_pet_id ON consultations(pet_id);
 CREATE INDEX IF NOT EXISTS idx_consultations_status ON consultations(status);
-CREATE INDEX IF NOT EXISTS idx_health_records_pet ON health_records(pet_id);
+CREATE INDEX IF NOT EXISTS idx_consultation_messages_consultation ON consultation_messages(consultation_id);
+CREATE INDEX IF NOT EXISTS idx_health_records_pet_date ON health_records(pet_id, date DESC);
+CREATE INDEX IF NOT EXISTS idx_reminders_scheduled ON reminders(scheduled_date, status);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_sessions_phone ON whatsapp_sessions(phone_number);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_user ON subscriptions(user_id);
-CREATE INDEX IF NOT EXISTS idx_reminders_user ON reminders(user_id);
-CREATE INDEX IF NOT EXISTS idx_reminders_scheduled ON reminders(scheduled_at) WHERE status = 'pending';
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()

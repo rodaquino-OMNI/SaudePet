@@ -1,0 +1,97 @@
+# Dependabot configuration for PetVet AI
+# Automatically checks for dependency updates and security vulnerabilities
+
+version: 2
+updates:
+  # Node.js dependencies (root workspace)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      production-dependencies:
+        patterns:
+          - "express"
+          - "typeorm"
+          - "stripe"
+          - "ioredis"
+          - "bull"
+        update-types:
+          - "minor"
+          - "patch"
+      dev-dependencies:
+        patterns:
+          - "*"
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # API package
+  - package-ecosystem: "npm"
+    directory: "/packages/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
+  # WhatsApp Handler package
+  - package-ecosystem: "npm"
+    directory: "/packages/whatsapp-handler"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
+  # Admin Dashboard package
+  - package-ecosystem: "npm"
+    directory: "/packages/admin-dashboard"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
+  # Python AI Services
+  - package-ecosystem: "pip"
+    directory: "/packages/ai-services"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+
+  # Docker images
+  - package-ecosystem: "docker"
+    directory: "/packages/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  - package-ecosystem: "docker"
+    directory: "/packages/whatsapp-handler"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  - package-ecosystem: "docker"
+    directory: "/packages/ai-services"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  # Terraform providers
+  - package-ecosystem: "terraform"
+    directory: "/infrastructure/terraform"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3

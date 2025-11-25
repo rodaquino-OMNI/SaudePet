@@ -1,397 +1,436 @@
-# <img src="https://raw.githubusercontent.com/SaudePet/assets/main/logo.png" alt="SaudePet" width="30" height="30"> SaudePet
+# PetVet AI - SaudePet
 
+**Veterinary Virtual Assistant Platform - WhatsApp-First Approach**
 
-## 📱 Sobre
+[![CI Pipeline](https://github.com/rodaquino-OMNI/SaudePet/actions/workflows/ci.yml/badge.svg)](https://github.com/rodaquino-OMNI/SaudePet/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/rodaquino-OMNI/SaudePet/actions/workflows/codeql.yml/badge.svg)](https://github.com/rodaquino-OMNI/SaudePet/actions/workflows/codeql.yml)
 
-**SaudePet** é uma plataforma revolucionária de saúde veterinária que conecta tutores de pets a um assistente veterinário virtual inteligente. Através de IA avançada, oferecemos consultas virtuais ilimitadas, diagnósticos preliminares e manutenção de prontuários eletrônicos completos.
+## Overview
 
-### 🎯 Nossa Missão
+PetVet AI (SaudePet) is a WhatsApp-first veterinary virtual assistant platform that provides AI-powered veterinary consultations, diagnosis, and treatment recommendations. Users interact primarily through WhatsApp, with an optional admin dashboard for operations management.
 
-Democratizar o acesso a cuidados veterinários de qualidade, fornecendo orientações confiáveis 24 horas por dia, 7 dias por semana, diretamente no smartphone dos tutores.
+### Platform Strategy
 
-### 📊 Números
+| Channel | Priority | Description |
+|---------|----------|-------------|
+| **WhatsApp** | PRIMARY | Main user interface via WhatsApp Business Cloud API |
+| **Admin Dashboard** | INTERNAL | React-based web panel for operations and analytics |
+| **Mobile App** | PLANNED | React Native app for enhanced features (Phase 2) |
 
-- 🏥 **+1000** protocolos veterinários
-- 🤖 **< 3s** tempo de resposta da IA
-- 📋 **100%** digital e sem papel
-- 🌍 **3** idiomas suportados
+### Current Status: **MVP Complete**
 
----
-
-## ✨ Features
-
-### 🏥 Consultas Virtuais Ilimitadas
-- Chat inteligente com IA veterinária especializada
-- Análise de sintomas em tempo real
-- Diagnósticos diferenciais baseados em evidências
-- Recomendações de tratamento personalizadas
-
-### 📋 Prontuário Eletrônico Completo
-- Timeline visual da saúde do pet
-- Upload de exames e documentos
-- Histórico de vacinação integrado
-- Compartilhamento seguro com veterinários
-
-### 🔔 Sistema de Lembretes Inteligente
-- Vacinas e reforços
-- Medicações com horários
-- Consultas de rotina
-- Vermifugação periódica
-
-### 💊 Prescrições Digitais
-- Receitas veterinárias eletrônicas
-- Dosagens calculadas automaticamente
-- Integração futura com farmácias
-- Histórico de medicamentos
-
-### 📊 Dashboard Personalizado
-- Insights de saúde do pet
-- Alertas de cuidados preventivos
-- Estatísticas de bem-estar
-- Recomendações sazonais
+The platform is fully functional with all core features implemented:
+- WhatsApp webhook integration with conversation flows
+- AI-powered veterinary diagnosis and treatment recommendations
+- Pet and user management
+- Subscription management with Stripe integration
+- Comprehensive monitoring and observability
 
 ---
 
-## 🛠 Tecnologias
-
-<p align="center">
-  <img src="https://img.shields.io/badge/React_Native-0.72-61DAFB?style=for-the-badge&logo=react&logoColor=white" alt="React Native">
-  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Node.js-20_LTS-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js">
-  <img src="https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Redis-7.0-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis">
-  <img src="https://img.shields.io/badge/AWS-Cloud-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white" alt="AWS">
-  <img src="https://img.shields.io/badge/OpenAI-API-412991?style=for-the-badge&logo=openai&logoColor=white" alt="OpenAI">
-  <img src="https://img.shields.io/badge/Stripe-Payments-008CDD?style=for-the-badge&logo=stripe&logoColor=white" alt="Stripe">
-</p>
-
-### 📱 Mobile
-- **Framework:** React Native + TypeScript
-- **Estado:** Zustand
-- **Navegação:** React Navigation 6
-- **UI/UX:** Custom components + Reanimated 3
-- **Forms:** React Hook Form + Yup
-
-### 🖥 Backend
-- **Runtime:** Node.js 20 LTS
-- **Framework:** Express + TypeScript
-- **ORM:** TypeORM
-- **Cache:** Redis
-- **Queue:** Bull
-
-### ☁️ Infraestrutura
-- **Cloud:** AWS (ECS, RDS, S3, CloudFront)
-- **CI/CD:** GitHub Actions
-- **Monitoring:** CloudWatch + Sentry
-- **Analytics:** Mixpanel
-
----
-
-## 🏗 Arquitetura
-
-O SaudePet utiliza uma arquitetura de microserviços com foco em **WhatsApp-first**:
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        WhatsApp Cloud API                       │
-└──────────────────────────────┬──────────────────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     WhatsApp Handler Service                      │
-│              (Node.js/Express + Bull Queue + Redis)              │
-│  • Webhook receiver    • Message queue    • Flow engine          │
-└──────────────────────────────┬───────────────────────────────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              ▼                ▼                ▼
-┌──────────────────┐  ┌───────────────┐  ┌───────────────────┐
-│    Core API      │  │  AI Services  │  │  Admin Dashboard  │
-│  (Node/Express)  │  │   (FastAPI)   │  │     (React)       │
-│  • User mgmt     │  │  • LLM orch.  │  │  • Analytics      │
-│  • Pet records   │  │  • Diagnosis  │  │  • User mgmt      │
-│  • Consultations │  │  • NLP proc.  │  │  • Monitoring     │
-└────────┬─────────┘  └───────────────┘  └───────────────────┘
-         │
-         ▼
-┌───────────────────┐  ┌──────────────┐
-│    PostgreSQL     │  │    Redis     │
-│  (RDS/Aurora)     │  │ (ElastiCache)│
-└───────────────────┘  └──────────────┘
+                              USER CHANNELS
+┌─────────────────────────────────────────────────────────────────────────┐
+│              WhatsApp (PRIMARY)          │    Admin Dashboard           │
+│   ┌───────────────────────────────┐      │   ┌───────────────────────┐  │
+│   │  WhatsApp Business Cloud API  │      │   │   React + Vite        │  │
+│   │  (Meta Webhooks)              │      │   │   (Internal Use)      │  │
+│   └───────────────┬───────────────┘      │   └───────────┬───────────┘  │
+└───────────────────┼──────────────────────┴───────────────┼──────────────┘
+                    │                                      │
+                    ▼                                      │
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      AWS APPLICATION LOAD BALANCER                       │
+│                        (HTTPS + SSL/TLS)                                │
+└─────────────────────────────────┬───────────────────────────────────────┘
+                                  │
+                ┌─────────────────┼─────────────────┐
+                │                 │                 │
+                ▼                 ▼                 ▼
+┌───────────────────┐ ┌───────────────────┐ ┌───────────────────┐
+│  WhatsApp Handler │ │    Core API       │ │   AI Services     │
+│  (Node.js/Express)│ │   (Node.js/TS)    │ │   (Python/FastAPI)│
+│  Port: 3001       │ │   Port: 3000      │ │   Port: 8000      │
+│  ECS Fargate      │ │   ECS Fargate     │ │   ECS Fargate     │
+├───────────────────┤ ├───────────────────┤ ├───────────────────┤
+│ • Webhook Receiver│ │ • Users Module    │ │ • LLM Orchestrator│
+│ • Message Queue   │ │ • Pets Module     │ │ • Diagnosis Engine│
+│ • Flow Engine     │ │ • Consultations   │ │ • Treatment Proto.│
+│ • Session Manager │ │ • Health Records  │ │ • Image Analysis  │
+│ • Template Sender │ │ • Subscriptions   │ │ • Knowledge Base  │
+└─────────┬─────────┘ │ • Reminders       │ └─────────┬─────────┘
+          │           └─────────┬─────────┘           │
+          │                     │                     │
+          └─────────────────────┼─────────────────────┘
+                                │
+                                ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                            DATA LAYER                                    │
+├─────────────────────┬───────────────────────┬───────────────────────────┤
+│   PostgreSQL (RDS)  │   Redis (ElastiCache) │      S3 Storage           │
+│   [Transactional]   │   [Sessions & Cache]  │   [Media & Documents]     │
+│                     │                       │                           │
+│ • users             │ • WhatsApp Sessions   │ • Pet Photos              │
+│ • pets              │ • Conversation State  │ • Medical Documents       │
+│ • consultations     │ • LLM Response Cache  │ • Prescription PDFs       │
+│ • health_records    │ • Rate Limiting       │                           │
+│ • subscriptions     │                       │                           │
+│ • reminders         │                       │                           │
+│ • whatsapp_sessions │                       │                           │
+└─────────────────────┴───────────────────────┴───────────────────────────┘
 ```
 
-### 📁 Estrutura do Monorepo
+---
+
+## Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| **WhatsApp Integration** | WhatsApp Business Cloud API v18.0 | Primary user interface |
+| **Backend API** | Node.js 20 LTS + Express + TypeScript | Core business logic |
+| **AI Services** | Python 3.11 + FastAPI | LLM orchestration, diagnosis engine |
+| **Database** | PostgreSQL 15 (RDS) | Transactional data |
+| **Cache/Sessions** | Redis 7 (ElastiCache) | WhatsApp sessions, LLM cache |
+| **Storage** | AWS S3 + CloudFront | Media files, prescriptions |
+| **Infrastructure** | AWS ECS Fargate, ALB, RDS | Cloud hosting |
+| **IaC** | Terraform | Infrastructure as Code |
+| **CI/CD** | GitHub Actions | Automated pipelines |
+| **Monitoring** | CloudWatch + SNS | Observability & alerting |
+| **Payments** | Stripe | Subscription billing |
+| **LLM Providers** | OpenAI + Anthropic | AI diagnosis (with fallback) |
+
+---
+
+## Repository Structure
 
 ```
 SaudePet/
 ├── packages/
-│   ├── whatsapp-handler/     # Serviço de integração WhatsApp
-│   ├── api/                  # API principal (usuários, pets, consultas)
-│   ├── ai-services/          # Serviços de IA (Python/FastAPI)
-│   └── admin-dashboard/      # Painel administrativo (React)
+│   ├── whatsapp-handler/        # WhatsApp webhook & message processing
+│   │   ├── src/
+│   │   │   ├── webhooks/        # Meta webhook handlers
+│   │   │   ├── flows/           # Conversation flows (main-menu, consultation, subscription)
+│   │   │   ├── clients/         # API, AI, WhatsApp clients
+│   │   │   ├── services/        # Session management
+│   │   │   ├── queues/          # Bull message queue
+│   │   │   └── utils/           # Logger, metrics
+│   │   └── Dockerfile
+│   │
+│   ├── api/                     # Core business API
+│   │   ├── src/
+│   │   │   ├── modules/         # users, pets, consultations, health-records,
+│   │   │   │                    # subscriptions, reminders
+│   │   │   ├── shared/          # middleware, logger
+│   │   │   └── config/          # database, app config
+│   │   └── Dockerfile
+│   │
+│   ├── ai-services/             # Python AI/LLM services
+│   │   ├── src/
+│   │   │   ├── llm/             # LLM orchestrator (OpenAI/Anthropic)
+│   │   │   ├── diagnosis/       # Veterinary diagnosis analyzer
+│   │   │   └── routers/         # FastAPI endpoints
+│   │   └── Dockerfile
+│   │
+│   └── admin-dashboard/         # React admin panel
+│       ├── src/
+│       │   ├── pages/           # Dashboard, Users, Pets, Consultations, etc.
+│       │   ├── components/      # Reusable UI components
+│       │   └── store/           # Zustand state management
+│       └── Dockerfile
+│
 ├── infrastructure/
-│   └── terraform/            # Infraestrutura AWS como código
-│       └── modules/
-│           ├── networking/   # VPC, subnets, security groups
-│           ├── database/     # RDS, ElastiCache
-│           ├── compute/      # ECS Fargate services
-│           ├── storage/      # S3, CloudFront
-│           └── monitoring/   # CloudWatch, SNS alerting
+│   └── terraform/
+│       ├── modules/             # networking, database, compute, storage, monitoring
+│       └── environments/        # dev, staging, production
+│
 ├── .github/
-│   └── workflows/            # CI/CD pipelines
-├── scripts/                  # Scripts de desenvolvimento
-├── docker-compose.yml        # Orquestração para produção
-└── docker-compose.dev.yml    # Ambiente de desenvolvimento
+│   ├── workflows/               # ci.yml, cd-staging.yml, cd-production.yml, codeql.yml
+│   ├── dependabot.yml           # Automated dependency updates
+│   └── CODEOWNERS
+│
+├── docs/
+│   └── api/
+│       └── openapi.yaml         # API documentation (OpenAPI 3.0)
+│
+├── scripts/
+│   ├── init-db.sql              # Database schema
+│   ├── setup-dev.sh             # Development setup
+│   └── simulate-whatsapp.sh     # Local WhatsApp testing
+│
+├── docker-compose.yml           # Production composition
+└── docker-compose.dev.yml       # Development with hot reload
 ```
 
 ---
 
-## 🚀 Começando
+## Features
 
-### Pré-requisitos
+### Implemented (MVP)
+
+#### WhatsApp Conversation Flows
+- **Main Menu**: Navigation hub with buttons for consultations, pets, history, subscription
+- **Consultation Flow**: Symptom collection, AI diagnosis, treatment recommendations, prescription generation
+- **Pet Registration**: Species selection (dog, cat, bird, exotic), profile creation
+- **Subscription Flow**: Plan selection, payment integration, upgrade/downgrade
+
+#### AI-Powered Diagnosis
+- Multi-provider LLM support (OpenAI primary, Anthropic fallback)
+- Clarifying questions for precise diagnosis
+- Differential diagnosis with probability scores
+- Urgency level assessment (low, medium, high, emergency)
+- Treatment protocol generation with medications and supportive care
+
+#### Core Platform
+- Phone-based user authentication (WhatsApp verified)
+- Pet profile management with health records
+- Consultation history with full conversation logs
+- Digital prescription generation (PDF)
+- Reminder system (vaccines, medications, checkups)
+
+#### Subscription Plans
+| Plan | Price | Consultations | Pets |
+|------|-------|---------------|------|
+| Basic | R$ 29.90/mo | 5/month | 1 |
+| Family | R$ 49.90/mo | Unlimited | 3 |
+| Premium | R$ 79.90/mo | Unlimited | Unlimited + Image Analysis |
+
+#### Infrastructure & DevOps
+- Multi-environment Terraform (dev, staging, production)
+- Blue-green deployment support
+- WAF protection (production)
+- CloudWatch dashboards and alarms
+- Automated security scanning (CodeQL, Dependabot, Trivy)
+
+### Planned (Phase 2)
+- [ ] React Native mobile app
+- [ ] Advanced image analysis for skin conditions
+- [ ] Multi-language support (EN, ES)
+- [ ] Telehealth video consultations
+- [ ] Pharmacy integrations
+- [ ] Pet insurance partnerships
+
+---
+
+## Getting Started
+
+### Prerequisites
 
 - Node.js 20.x
-- Python 3.11+ (para AI Services)
-- Docker e Docker Compose
-- PostgreSQL 15 (ou via Docker)
-- Redis 7 (ou via Docker)
-- Conta AWS (para deploy)
-- Chaves de API (OpenAI/Anthropic, WhatsApp Business, Stripe)
+- Python 3.11+
+- Docker & Docker Compose
+- PostgreSQL 15 (or via Docker)
+- Redis 7 (or via Docker)
+- AWS Account (for deployment)
+- API Keys: OpenAI/Anthropic, WhatsApp Business, Stripe
 
-### 🔧 Instalação Rápida
+### Quick Start
 
-1. **Clone o repositório**
+1. **Clone the repository**
 ```bash
-git clone https://github.com/SaudePet/saudepet.git
-cd saudepet
+git clone https://github.com/rodaquino-OMNI/SaudePet.git
+cd SaudePet
 ```
 
-2. **Execute o script de setup**
-```bash
-./scripts/setup-dev.sh
-```
-
-Ou manualmente:
-
-3. **Configure as variáveis de ambiente**
+2. **Configure environment variables**
 ```bash
 cp .env.example .env
-# Edite .env com suas configurações
+# Edit .env with your API keys and configuration
 ```
 
-4. **Instale as dependências**
+3. **Start with Docker Compose (Development)**
 ```bash
+docker compose -f docker-compose.dev.yml up
+```
+
+4. **Or run services individually**
+```bash
+# Install dependencies
 npm install
+
+# Start database and Redis
+docker compose up db redis -d
+
+# Run services
+npm run dev:api
+npm run dev:whatsapp
+npm run dev:ai
 ```
 
-5. **Inicie com Docker Compose**
-```bash
-docker compose -f docker-compose.dev.yml up
-```
+### Development URLs
 
-### 📍 URLs de Desenvolvimento
+| Service | URL | Description |
+|---------|-----|-------------|
+| WhatsApp Handler | http://localhost:3001 | Webhook endpoint |
+| Core API | http://localhost:3000 | REST API |
+| AI Services | http://localhost:8000 | Diagnosis endpoints |
+| Admin Dashboard | http://localhost:5173 | Web admin panel |
+| API Docs | http://localhost:3000/docs | Swagger UI |
+| pgAdmin | http://localhost:8082 | Database management |
+| Redis Commander | http://localhost:8081 | Cache inspection |
 
-| Serviço | URL |
-|---------|-----|
-| WhatsApp Handler | http://localhost:3001 |
-| Core API | http://localhost:3000 |
-| AI Services | http://localhost:8000 |
-| Admin Dashboard | http://localhost:5173 |
-| pgAdmin | http://localhost:8082 |
-| Redis Commander | http://localhost:8081 |
-
-### 🐳 Docker
+### Testing WhatsApp Locally
 
 ```bash
-# Desenvolvimento (com hot reload)
-docker compose -f docker-compose.dev.yml up
+# Use ngrok for webhook testing
+ngrok http 3001
 
-# Produção
-docker compose up -d
-
-# Build individual
-docker build -t petvet-api:latest ./packages/api
-```
-
-### 🧪 Testando WhatsApp Localmente
-
-Use o simulador de mensagens WhatsApp:
-```bash
-./scripts/simulate-whatsapp.sh
-
-# Ou envie uma mensagem específica:
-./scripts/simulate-whatsapp.sh --message "Oi"
-
-# Ou execute um fluxo completo de consulta:
-./scripts/simulate-whatsapp.sh --flow
+# Or use the WhatsApp simulator
+./scripts/simulate-whatsapp.sh --message "Ola"
+./scripts/simulate-whatsapp.sh --flow consultation
 ```
 
 ---
 
-## 📸 Screenshots
+## API Documentation
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/SaudePet/assets/main/screenshot-1.png" width="200" alt="Home">
-  <img src="https://raw.githubusercontent.com/SaudePet/assets/main/screenshot-2.png" width="200" alt="Chat">
-  <img src="https://raw.githubusercontent.com/SaudePet/assets/main/screenshot-3.png" width="200" alt="Prontuário">
-  <img src="https://raw.githubusercontent.com/SaudePet/assets/main/screenshot-4.png" width="200" alt="Timeline">
-</p>
+The API is documented using OpenAPI 3.0 specification. See [docs/api/openapi.yaml](docs/api/openapi.yaml).
+
+### Key Endpoints
+
+```
+# Users
+GET    /api/v1/users/by-phone/:phoneNumber
+POST   /api/v1/users
+
+# Pets
+GET    /api/v1/pets
+POST   /api/v1/pets
+GET    /api/v1/pets/:id
+
+# Consultations
+POST   /api/v1/consultations
+GET    /api/v1/consultations/:id
+PATCH  /api/v1/consultations/:id
+POST   /api/v1/consultations/:id/prescription
+
+# Subscriptions
+GET    /api/v1/subscriptions/plans
+POST   /api/v1/subscriptions
+PUT    /api/v1/subscriptions/current
+
+# Reminders
+GET    /api/v1/reminders
+POST   /api/v1/reminders
+POST   /api/v1/reminders/:id/acknowledge
+POST   /api/v1/reminders/:id/snooze
+
+# WhatsApp Webhook
+GET    /webhooks/whatsapp    # Meta verification
+POST   /webhooks/whatsapp    # Message receiver
+```
 
 ---
 
-## 🧪 Testes
+## Deployment
+
+### CI/CD Pipelines
+
+| Workflow | Trigger | Description |
+|----------|---------|-------------|
+| `ci.yml` | PR, push to develop | Lint, test, build, security scan |
+| `cd-staging.yml` | Push to develop | Auto-deploy to staging |
+| `cd-production.yml` | Release published | Blue-green deploy to production |
+| `codeql.yml` | Weekly, PR | Security analysis |
+
+### Infrastructure Environments
 
 ```bash
-# Testes unitários
-npm run test
+# Development
+cd infrastructure/terraform/environments/dev
+terraform init && terraform apply
 
-# Testes de integração
-npm run test:integration
+# Staging
+cd infrastructure/terraform/environments/staging
+terraform init && terraform apply
 
-# Testes E2E
-npm run test:e2e
+# Production (with WAF and Multi-AZ)
+cd infrastructure/terraform/environments/production
+terraform init && terraform apply
+```
+
+---
+
+## Monitoring
+
+### CloudWatch Dashboards
+
+- **WhatsApp Metrics**: Webhook count, response time, message volume
+- **ECS Metrics**: CPU/Memory utilization per service
+- **Business Metrics**: Consultations completed, prescriptions generated
+
+### Alerts Configured
+
+- WhatsApp webhook error rate > 10 in 5 minutes
+- Webhook latency > 5 seconds
+- ECS CPU > 80%
+- RDS CPU > 80%
+- Redis memory > 80%
+- ALB 5xx errors > 50 in 5 minutes
+
+---
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Test specific packages
+npm run test:api
+npm run test:whatsapp-handler
+
+# Python tests
+cd packages/ai-services && pytest
 
 # Coverage
 npm run test:coverage
 ```
 
-### 📊 Padrões de Código
+---
 
-- **Linting:** ESLint + Prettier
-- **Commit:** Conventional Commits
-- **Branches:** GitFlow
-- **Code Review:** Obrigatório para merge
+## Security
+
+- **Authentication**: Phone-based via WhatsApp verification
+- **Encryption**: TLS 1.3 in transit, AES-256 at rest
+- **Secrets**: AWS Secrets Manager with KMS encryption
+- **Scanning**: CodeQL (SAST), Trivy (container), Dependabot (dependencies)
+- **LGPD Compliance**: Soft delete support, data export capability
 
 ---
 
-## 🗺 Roadmap
+## Contributing
 
-### ✅ Fase 1 - MVP (Q1 2025)
-- [x] Sistema de autenticação
-- [x] Chat com IA veterinária
-- [x] Prontuário básico
-- [x] Sistema de pagamentos
-- [x] Apps iOS e Android
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### 🚧 Fase 2 - Expansão (Q2 2025)
-- [ ] Timeline visual completa
-- [ ] Sistema avançado de lembretes
-- [ ] Análise de imagens por IA
-- [ ] Multi-idioma (EN, ES)
-- [ ] Compartilhamento de prontuário
-
-### 📅 Fase 3 - Marketplace (Q3 2025)
-- [ ] Integração com e-commerces
-- [ ] Recomendações de produtos
-- [ ] Sistema de cashback
-- [ ] Programa de fidelidade
-
-### 🔮 Fase 4 - Inovação (Q4 2025)
-- [ ] Teleconsulta com veterinários
-- [ ] Seguro pet integrado
-- [ ] API para clínicas
-- [ ] Wearables para pets
+### Code Standards
+- TypeScript for Node.js services
+- Python 3.11+ with type hints for AI services
+- ESLint + Prettier (TS), Black + Ruff (Python)
+- Conventional Commits
 
 ---
 
-## 🤝 Contribuindo
+## License
 
-Adoramos contribuições! Por favor, leia nosso [Guia de Contribuição](CONTRIBUTING.md) para detalhes sobre nosso código de conduta e processo de submissão de pull requests.
-
-### 🐛 Encontrou um bug?
-
-- Verifique se já não foi reportado nas [issues](https://github.com/SaudePet/saudepet/issues)
-- Se não, [abra uma nova issue](https://github.com/SaudePet/saudepet/issues/new?template=bug_report.md)
-
-### 💡 Tem uma sugestão?
-
-- Primeiro, verifique as [discussões](https://github.com/SaudePet/saudepet/discussions)
-- Abra uma [feature request](https://github.com/SaudePet/saudepet/issues/new?template=feature_request.md)
-
-### 📝 Pull Requests
-
-1. Fork o projeto
-2. Crie sua feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add: amazing feature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+This project is proprietary software. All rights reserved.
 
 ---
 
-## 📄 Licença
+## Contact
 
-Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
----
-
-## 👥 Time
-
-<table>
-  <tr>
-    <td align="center">
-      <a href="https://github.com/founder">
-        <img src="https://github.com/founder.png" width="100px;" alt=""/>
-        <br />
-        <sub><b>João Silva</b></sub>
-      </a>
-      <br />
-      <sub>Founder & CEO</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/cto">
-        <img src="https://github.com/cto.png" width="100px;" alt=""/>
-        <br />
-        <sub><b>Maria Santos</b></sub>
-      </a>
-      <br />
-      <sub>CTO</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/lead-dev">
-        <img src="https://github.com/lead-dev.png" width="100px;" alt=""/>
-        <br />
-        <sub><b>Pedro Costa</b></sub>
-      </a>
-      <br />
-      <sub>Lead Developer</sub>
-    </td>
-    <td align="center">
-      <a href="https://github.com/vet-advisor">
-        <img src="https://github.com/vet-advisor.png" width="100px;" alt=""/>
-        <br />
-        <sub><b>Dra. Ana Lima</b></sub>
-      </a>
-      <br />
-      <sub>Veterinary Advisor</sub>
-    </td>
-  </tr>
-</table>
-
----
-
-## 📞 Contato
-
-- **Website:** [www.saudepet.com.br](https://www.saudepet.com.br)
-- **Email:** contato@saudepet.com.br
-- **LinkedIn:** [SaudePet](https://linkedin.com/company/saudepet)
-- **Instagram:** [@saudepetbr](https://instagram.com/saudepetbr)
-
----
-
-## 🙏 Agradecimentos
-
-- Todos os veterinários que contribuíram com conhecimento
-- Comunidade open source
-- Beta testers e early adopters
-- Nossos investidores e apoiadores
+- **Repository**: [github.com/rodaquino-OMNI/SaudePet](https://github.com/rodaquino-OMNI/SaudePet)
+- **Email**: support@petvet.ai
 
 ---
 
 <p align="center">
-  Feito com ❤️ para pets e seus tutores
-  <br>
-  <strong>SaudePet © 2025</strong>
+  <strong>PetVet AI - SaudePet</strong><br>
+  WhatsApp-First Veterinary Virtual Assistant<br>
+  <em>Democratizing access to veterinary care</em>
 </p>

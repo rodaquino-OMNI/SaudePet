@@ -1,0 +1,10 @@
+# PetVet AI - Staging Environment Variables
+# Copy this file to terraform.tfvars and fill in the values
+
+aws_region = "us-east-1"
+
+db_username = "petvet_staging"
+db_password = "your-secure-staging-password"
+
+ecr_repository_url = "123456789012.dkr.ecr.us-east-1.amazonaws.com"
+image_tag          = "staging"

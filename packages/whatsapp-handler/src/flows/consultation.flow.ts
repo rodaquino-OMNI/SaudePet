@@ -111,11 +111,21 @@ export const consultationFlow: Flow = {
     }
 
     // Show pet selection
+    const getSpeciesEmoji = (species: string): string => {
+      const emojis: Record<string, string> = {
+        dog: '🐕',
+        cat: '🐈',
+        bird: '🐦',
+        exotic: '🦎',
+      };
+      return emojis[species] || '🐾';
+    };
+
     const petButtons = pets.slice(0, 3).map((pet) => ({
       type: 'reply' as const,
       reply: {
         id: `pet-${pet.id}`,
-        title: `${pet.species === 'dog' ? '🐕' : '🐈'} ${pet.name}`,
+        title: `${getSpeciesEmoji(pet.species)} ${pet.name}`,
       },
     }));
 
