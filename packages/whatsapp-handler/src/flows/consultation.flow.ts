@@ -24,7 +24,17 @@ interface ConsultationState {
   [key: string]: unknown;
 }
 
-export const consultationFlow: Flow = {
+interface ConsultationFlow extends Flow {
+  startConsultation(context: FlowContext): Promise<FlowResult>;
+  handlePetSelection(context: FlowContext): Promise<FlowResult>;
+  handleSymptomDescription(context: FlowContext): Promise<FlowResult>;
+  handleClarifyingAnswers(context: FlowContext): Promise<FlowResult>;
+  handleDiagnosisResponse(context: FlowContext): Promise<FlowResult>;
+  handleTreatmentResponse(context: FlowContext): Promise<FlowResult>;
+  handlePrescriptionResponse(context: FlowContext): Promise<FlowResult>;
+}
+
+export const consultationFlow: ConsultationFlow = {
   name: 'consultation',
 
   async process(context: FlowContext): Promise<FlowResult> {

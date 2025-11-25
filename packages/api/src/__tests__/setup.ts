@@ -35,3 +35,15 @@ afterAll(async () => {
   // Allow pending promises to resolve
   await new Promise((resolve) => setTimeout(resolve, 100));
 });
+
+// Basic test to ensure setup runs correctly
+describe('Test Setup', () => {
+  it('should initialize test environment correctly', () => {
+    expect(process.env.NODE_ENV).toBe('test');
+    expect(process.env.JWT_SECRET).toBe('test-jwt-secret-key-for-testing');
+  });
+
+  it('should mock TypeORM DataSource', () => {
+    expect(jest.isMockFunction(require('../config/database').AppDataSource.initialize)).toBe(true);
+  });
+});

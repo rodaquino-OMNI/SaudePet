@@ -29,6 +29,8 @@ const configSchema = z.object({
   aiServices: z.object({
     url: z.string(),
   }),
+
+  appUrl: z.string().default('http://localhost:5173'),
 });
 
 type Config = z.infer<typeof configSchema>;
@@ -57,6 +59,7 @@ function loadConfig(): Config {
     aiServices: {
       url: process.env.AI_SERVICES_URL,
     },
+    appUrl: process.env.APP_URL,
   });
 
   if (!result.success) {
@@ -87,6 +90,7 @@ function loadConfig(): Config {
         aiServices: {
           url: process.env.AI_SERVICES_URL || 'http://localhost:8000',
         },
+        appUrl: process.env.APP_URL || 'http://localhost:5173',
       };
     }
 

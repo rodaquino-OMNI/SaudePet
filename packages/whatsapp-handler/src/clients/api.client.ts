@@ -217,6 +217,20 @@ class ApiClient {
       throw error;
     }
   }
+
+  /**
+   * Create subscription
+   */
+  async createSubscription(userId: string, plan: string): Promise<{
+    checkoutUrl?: string;
+    sessionId?: string;
+  }> {
+    const response = await this.client.post('/api/v1/subscriptions', {
+      userId,
+      plan,
+    });
+    return response.data;
+  }
 }
 
 export const apiClient = new ApiClient();

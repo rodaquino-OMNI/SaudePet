@@ -265,10 +265,7 @@ export const subscriptionFlow: Flow = {
 
     try {
       // Create subscription via API
-      const result = await apiClient.createSubscription({
-        userId: session.userId!,
-        plan,
-      });
+      const result = await apiClient.createSubscription(session.userId!, plan);
 
       if (result.checkoutUrl) {
         // Stripe checkout flow

@@ -21,6 +21,7 @@ export interface FlowResult {
 export interface Flow {
   name: string;
   process(context: FlowContext): Promise<FlowResult>;
+  [key: string]: any; // Allow additional step methods for specific flows
 }
 
 const flows: Record<string, Flow> = {

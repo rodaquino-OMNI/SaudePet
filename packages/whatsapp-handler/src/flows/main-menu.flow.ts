@@ -2,9 +2,17 @@ import { Flow, FlowContext, FlowResult } from './engine';
 import { apiClient } from '../clients/api.client';
 import { logger } from '../utils/logger';
 
-export const mainMenuFlow: Flow & {
+interface MainMenuFlow extends Flow {
   showMenu(context: FlowContext, prefix?: string): FlowResult;
-} = {
+  handleButtonResponse(context: FlowContext, buttonId: string): Promise<FlowResult>;
+  handleTextInput(context: FlowContext, text: string): Promise<FlowResult>;
+  showPetsList(context: FlowContext): Promise<FlowResult>;
+  showHealthHistory(context: FlowContext): Promise<FlowResult>;
+  showSubscription(context: FlowContext): Promise<FlowResult>;
+  showHelp(context: FlowContext): FlowResult;
+}
+
+export const mainMenuFlow: MainMenuFlow = {
   name: 'main-menu',
 
   async process(context: FlowContext): Promise<FlowResult> {
