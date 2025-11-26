@@ -57,7 +57,10 @@ temp/
 *.tmp
 *.temp
 
-# Package locks (keep package-lock.json for npm)
+# Package locks
+# Note: package-lock.json should be committed for npm projects
+# Uncomment the line below only if using yarn or pnpm exclusively
+# package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
@@ -67,8 +70,8 @@ pnpm-lock.yaml
 credentials.json
 secrets/
 
-# Claude Flow generated files
-.claude/settings.local.json
+# Claude Flow generated files (agent orchestration)
+.claude/
 .mcp.json
 claude-flow.config.json
 .swarm/
@@ -91,5 +94,15 @@ coordination/orchestration/*
 *.sqlite-journal
 *.sqlite-wal
 claude-flow
-# Removed Windows wrapper files per user request
 hive-mind-prompt-*.txt
+
+# Additional common patterns that should be ignored
+*.bak
+*.backup
+*.orig
+*.rej
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+out/
