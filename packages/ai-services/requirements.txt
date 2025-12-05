@@ -39,5 +39,5 @@ pytest-cov==7.0.0
 
 # Linting
 black==23.12.1
-ruff==0.1.9
+ruff==0.14.7
 mypy==1.8.0
